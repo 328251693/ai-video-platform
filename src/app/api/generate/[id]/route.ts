@@ -61,7 +61,7 @@ export async function GET(
           if (status.status === "completed" && status.output_url && isR2Configured()) {
             try {
               const ext = task.model_id === "gpt-image-2" ? "png" : "mp4";
-              const key = `videos/${task.user_id}/${task.id}.${ext}`;
+              const key = `outputs/${task.user_id}/${task.id}.${ext}`;
               console.log("[R2] Uploading to R2:", key);
               finalUrl = await uploadUrlToR2(status.output_url, key);
               console.log("[R2] Uploaded successfully:", finalUrl);
@@ -163,10 +163,14 @@ export async function DELETE(
     }
 
     // Delete task
-    await supabase
-      .from("generation_tasks")
-      .delete()
-      .eq("id", taskId);
+      const { error: deleteError } = await supabase
+        .from("generation_tasks")
+        .delete()
+        .eq("id", taskId);
+
+      if (deleteError) {
+        return NextResponse.json({ error: "Failed to delete task" }, { status: 500 });
+      }
 
     return NextResponse.json({ success: true });
   } catch (error) {
