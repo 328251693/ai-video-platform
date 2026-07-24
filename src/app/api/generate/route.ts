@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { submitGeneration } from "@/lib/providers";
 import { uploadUrlToR2, isR2Configured } from "@/lib/r2";
+import { getModelCredits } from "@/lib/models";
 
 // POST /api/generate - Create a new generation task
 export async function POST(request: NextRequest) {
@@ -48,18 +49,16 @@ export async function POST(request: NextRequest) {
     // Get model info
     const { data: model, error: modelError } = await supabase
       .from("models")
-      .select("id, name, provider")
+      .select("id, name, provider, type")
       .eq("id", model_id)
+      .eq("is_active", true)
       .single();
 
     if (modelError || !model) {
       return NextResponse.json({ error: "Model not found" }, { status: 404 });
     }
 
-    // Estimate credits based on model type
-    let creditsEstimate = 20;
-    if (model_id === "gpt-image-2") creditsEstimate = 5;
-    else if (model_id.startsWith("MiniMax-Hailuo")) creditsEstimate = 30;
+    const creditsEstimate = getModelCredits(model_id);
 
     if (profile.credits_remaining < creditsEstimate) {
       return NextResponse.json(
@@ -90,30 +89,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Deduct credits
-    const { error: deductError } = await supabase
-      .from("profiles")
-      .update({ credits_remaining: profile.credits_remaining - creditsEstimate })
-      .eq("id", profile.id);
+    const { data: creditResult, error: creditError } = await supabase.rpc("consume_credits", {
+      p_user_id: profile.id,
+      p_amount: creditsEstimate,
+      p_reference_id: task.id,
+    });
 
-    if (deductError) {
-      console.error("Credit deduction error:", deductError);
+    if (creditError) {
+      await supabase.from("generation_tasks").delete().eq("id", task.id);
+      return NextResponse.json({ error: "Credits could not be reserved" }, { status: 409 });
     }
 
-    // Record transaction
-    await supabase.from("credit_transactions").insert({
-      user_id: profile.id,
-      amount: -creditsEstimate,
-      balance_after: profile.credits_remaining - creditsEstimate,
-      source: "generation",
-      reference_id: task.id,
-    });
+    const creditsRemaining = Number((creditResult as { balance_after?: number })?.balance_after ?? profile.credits_remaining - creditsEstimate);
 
     // Call upstream AI provider
     try {
-      // Determine provider based on model
-      const provider = model_id.startsWith("MiniMax-Hailuo") ? "apimart" : "grsai";
-      const type = model_id === "gpt-image-2" ? "image" : "video";
+      const provider = model.provider;
+      const type = model.type === "image" ? "image" : "video";
 
       console.log("[Generate] Calling submitGeneration with:", { prompt, model_id, type, provider });
       console.log("[Generate] apimart_key exists:", !!process.env.apimart_key);
@@ -145,7 +137,7 @@ export async function POST(request: NextRequest) {
         if (isR2Configured()) {
           try {
             const ext = model_id === "gpt-image-2" ? "png" : "mp4";
-            const key = `videos/${profile.id}/${task.id}.${ext}`;
+            const key = `outputs/${profile.id}/${task.id}.${ext}`;
             console.log("[R2] Uploading to R2:", key);
             finalUrl = await uploadUrlToR2(providerResult.output_url, key);
             console.log("[R2] Uploaded successfully:", finalUrl);
@@ -193,7 +185,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         task_id: task.id,
-        credits_remaining: profile.credits_remaining - creditsEstimate,
+        credits_remaining: creditsRemaining,
       });
     } catch (providerError) {
       console.error("[Generate] Provider submission error:", providerError);
@@ -207,18 +199,10 @@ export async function POST(request: NextRequest) {
         console.error("[Generate] Task update to failed error:", failUpdateError);
       }
 
-      const refundBalance = profile.credits_remaining;
-      await supabase
-        .from("profiles")
-        .update({ credits_remaining: refundBalance })
-        .eq("id", profile.id);
-
-      await supabase.from("credit_transactions").insert({
-        user_id: profile.id,
-        amount: creditsEstimate,
-        balance_after: refundBalance,
-        source: "refund",
-        reference_id: task.id,
+      await supabase.rpc("refund_credits", {
+        p_user_id: profile.id,
+        p_amount: creditsEstimate,
+        p_reference_id: task.id,
       });
 
       return NextResponse.json(
@@ -227,10 +211,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      task_id: task.id,
-      credits_remaining: (profile?.credits_remaining ?? 0) - creditsEstimate,
-    });
+      return NextResponse.json({ task_id: task.id, credits_remaining: creditsRemaining });
   } catch (error) {
     console.error("Generate API error:", error);
     return NextResponse.json(

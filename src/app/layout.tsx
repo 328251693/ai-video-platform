@@ -4,12 +4,12 @@ import Header from "@/components/Header";
 
 export const metadata: Metadata = {
   title: {
-    default: "AI Video Platform - Create Stunning Videos with AI",
-    template: "%s | AI Video Platform",
+    default: "FrameForge - AI 创作工作台",
+    template: "%s | FrameForge",
   },
   description:
-    "Generate stunning videos and images using advanced AI models. The creative tool for creators, marketers, and businesses.",
-  keywords: ["AI video generation", "AI image generation", "video creation", "AI tools", "content creation"],
+    "用多个 AI 模型生成图片和视频，统一管理你的创作素材。",
+  keywords: ["AI 生图", "AI 生视频", "AI 创作", "素材管理"],
 };
 
 export default function RootLayout({
@@ -18,10 +18,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark h-full antialiased">
+    <html lang="zh-CN" className="dark h-full antialiased">
       <body className="min-h-full flex flex-col bg-neutral-950 text-neutral-100">
         <Header />
-        <main className="flex-1 pt-14">
+        <main className="flex-1 pt-16">
           {children}
         </main>
       </body>
