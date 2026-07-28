@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { submitGeneration } from "@/lib/providers";
 import { uploadUrlToR2, isR2Configured } from "@/lib/r2";
 import { getModelCredits } from "@/lib/models";
+import { moderatePrompt, ModerationUnavailableError } from "@/lib/moderation";
 
 // POST /api/generate - Create a new generation task
 export async function POST(request: NextRequest) {
@@ -27,19 +28,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
-    // Check credits
-    if (profile.credits_remaining <= 0) {
-      return NextResponse.json(
-        { error: "Insufficient credits. Please purchase more credits." },
-        { status: 402 }
-      );
-    }
-
     // Parse request body
     const body = await request.json();
     const { model_id, prompt, input_params = {} } = body;
 
-    if (!model_id || !prompt) {
+    if (!model_id || typeof prompt !== "string" || !prompt.trim()) {
       return NextResponse.json(
         { error: "Missing model_id or prompt" },
         { status: 400 }
@@ -56,6 +49,37 @@ export async function POST(request: NextRequest) {
 
     if (modelError || !model) {
       return NextResponse.json({ error: "Model not found" }, { status: 404 });
+    }
+
+    // 图片和视频生成必须先通过 Creem 审核，审核失败时禁止继续扣费或调用模型。
+    if (model.type === "image" || model.type === "video") {
+      try {
+        const moderation = await moderatePrompt(
+          prompt.trim(),
+          `user_${user.id}:request_${crypto.randomUUID()}`,
+        );
+
+        if (moderation.decision !== "allow") {
+          return NextResponse.json(
+            { error: "Your prompt was rejected because it violates our content policy. Please revise and try again." },
+            { status: 400 },
+          );
+        }
+      } catch (error) {
+        console.error("Content moderation error:", error);
+        const message = error instanceof ModerationUnavailableError
+          ? "Content moderation is temporarily unavailable. Please try again later."
+          : "Content moderation failed. Please try again later.";
+        return NextResponse.json({ error: message }, { status: 503 });
+      }
+    }
+
+    // Check credits
+    if (profile.credits_remaining <= 0) {
+      return NextResponse.json(
+        { error: "Insufficient credits. Please purchase more credits." },
+        { status: 402 }
+      );
     }
 
     const creditsEstimate = getModelCredits(model_id);

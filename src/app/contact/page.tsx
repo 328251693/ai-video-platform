@@ -65,7 +65,7 @@ export default function ContactPage() {
         <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
           <div>
             <div className="text-sm font-semibold text-white mb-1">Email</div>
-            <div className="text-sm text-neutral-400">support@aivideoplatform.com</div>
+            <div className="text-sm text-neutral-400">support@aividox.com</div>
           </div>
           <div>
             <div className="text-sm font-semibold text-white mb-1">Discord</div>
