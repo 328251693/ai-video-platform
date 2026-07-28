@@ -40,7 +40,9 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-white mt-8 mb-3">6. Prohibited Use</h2>
-            <p>You may not use our platform to generate content that is illegal, harmful, threatening, abusive, or violates the rights of others.</p>
+            <p>You may not use our platform to generate, upload, request, or distribute content that is illegal, harmful, threatening, abusive, defamatory, deceptive, or violates the rights of others.</p>
+            <p>You must not use the platform to generate NSFW content, sexually explicit content, pornography, sexualized or sexually suggestive content, or any content depicting or sexualizing minors. You must also not use the platform for sexual exploitation, non-consensual intimate imagery, impersonation, deepfakes, or face manipulation.</p>
+            <p>We use automated content moderation and may block prompts, cancel generations, suspend accounts, or remove content that violates this section or our Acceptable Use Policy. Attempts to bypass moderation are prohibited.</p>
           </section>
 
           <section>
@@ -50,7 +52,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-white mt-8 mb-3">8. Contact</h2>
-            <p>For questions about these terms, contact us at legal@aivideoplatform.com.</p>
+            <p>For questions about these terms or our content policies, contact us at support@aividox.com.</p>
           </section>
         </div>
       </div>
