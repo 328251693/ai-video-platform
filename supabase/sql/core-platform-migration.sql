@@ -1,14 +1,36 @@
 -- 核心平台升级：补齐任务权限，并将积分操作收敛到安全函数
 -- 已执行过 tables.sql 的环境请执行本文件
 
-CREATE POLICY "Users can update own tasks"
-  ON public.generation_tasks FOR UPDATE
-  USING (user_id = (SELECT id FROM public.profiles WHERE id = auth.uid()))
-  WITH CHECK (user_id = (SELECT id FROM public.profiles WHERE id = auth.uid()));
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'generation_tasks'
+      AND policyname = 'Users can update own tasks'
+  ) THEN
+    CREATE POLICY "Users can update own tasks"
+      ON public.generation_tasks FOR UPDATE
+      USING (user_id = (SELECT id FROM public.profiles WHERE id = auth.uid()))
+      WITH CHECK (user_id = (SELECT id FROM public.profiles WHERE id = auth.uid()));
+  END IF;
+END
+$$;
 
-CREATE POLICY "Users can delete own tasks"
-  ON public.generation_tasks FOR DELETE
-  USING (user_id = (SELECT id FROM public.profiles WHERE id = auth.uid()));
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'generation_tasks'
+      AND policyname = 'Users can delete own tasks'
+  ) THEN
+    CREATE POLICY "Users can delete own tasks"
+      ON public.generation_tasks FOR DELETE
+      USING (user_id = (SELECT id FROM public.profiles WHERE id = auth.uid()));
+  END IF;
+END
+$$;
 
 CREATE OR REPLACE FUNCTION public.consume_credits(
   p_user_id UUID,
