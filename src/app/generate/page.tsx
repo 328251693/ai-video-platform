@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
+import { useGenerationModels } from "@/hooks/useGenerationModels";
 
 interface Task {
   id: string;
@@ -27,13 +28,7 @@ export default function GeneratePage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
-
-  const models = [
-    { id: "MiniMax-Hailuo-2.3", name: "Hailuo 2.3", provider: "Apimart", credits: 30 },
-    { id: "MiniMax-Hailuo-2.3-Fast", name: "Hailuo 2.3 Fast", provider: "Apimart", credits: 25 },
-    { id: "nano-banana", name: "Nano Banana", provider: "Grsai", credits: 20 },
-    { id: "gpt-image-2", name: "GPT Image 2", provider: "Grsai", credits: 5 },
-  ];
+  const { models } = useGenerationModels("video");
 
   const fetchRecentTasks = useCallback(async () => {
     try {

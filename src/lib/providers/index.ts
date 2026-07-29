@@ -1,6 +1,8 @@
 // AI Provider 统一接口
 // 支持多个代理平台: Grsai, Apimart
 
+export type ProviderName = "grsai" | "apimart";
+
 // ==================== 配置 ====================
 
 const GRSAI_BASE_URL = process.env.GRSAI_BASE_URL || "https://grsaiapi.com";
@@ -190,30 +192,36 @@ async function apimartQueryResult(taskId: string): Promise<GenerationResult> {
 
 // ==================== 统一接口 ====================
 
-// 根据模型判断使用哪个 provider
-function getProvider(model: string): "grsai" | "apimart" {
-  if (model.startsWith("MiniMax-Hailuo")) {
-    return "apimart";
-  }
-  return "grsai";
+export function isSupportedProvider(provider: string): provider is ProviderName {
+  return provider === "grsai" || provider === "apimart";
 }
 
 export async function submitGeneration(params: {
   prompt: string;
   model: string;
+  provider: string;
+  provider_model_id?: string | null;
   duration?: number;
   aspect_ratio?: string;
   image_url?: string;
   type?: "video" | "image";
   resolution?: string;
 }): Promise<{ provider_task_id: string; status?: string; output_url?: string }> {
-  const provider = getProvider(params.model);
-  console.log("[Provider] submitGeneration:", { provider, model: params.model, type: params.type });
+  if (!isSupportedProvider(params.provider)) {
+    throw new Error(`Unsupported AI provider: ${params.provider}`);
+  }
 
-  if (provider === "apimart") {
+  const providerModelId = params.provider_model_id || params.model;
+  console.log("[Provider] submitGeneration:", { provider: params.provider, model: providerModelId, type: params.type });
+
+  if (params.provider === "apimart") {
+    if (params.type === "image") {
+      throw new Error("Apimart image generation is not configured");
+    }
+
     const result = await apimartGenerateVideo({
       prompt: params.prompt,
-      model: params.model,
+      model: providerModelId,
       duration: params.duration,
       resolution: params.resolution,
       first_frame_image: params.image_url,
@@ -229,7 +237,7 @@ export async function submitGeneration(params: {
   const images = params.image_url ? [params.image_url] : [];
   const result = await grsaiGenerate({
     prompt: params.prompt,
-    model: params.model,
+    model: providerModelId,
     images,
     aspectRatio: params.aspect_ratio,
     type: params.type || "video",

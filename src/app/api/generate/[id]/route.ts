@@ -45,7 +45,11 @@ export async function GET(
     if (task.status === "processing") {
       try {
         // Get provider and provider_task_id from metadata
-        const metadata = (task as any).metadata || {};
+        const metadata = (task.metadata || {}) as {
+          provider?: string;
+          provider_task_id?: string;
+          type?: string;
+        };
         const provider = metadata.provider || "grsai";
         const providerTaskId = metadata.provider_task_id || task.id;
 
@@ -60,7 +64,7 @@ export async function GET(
           // 任务完成时，把视频上传到 R2 持久存储
           if (status.status === "completed" && status.output_url && isR2Configured()) {
             try {
-              const ext = task.model_id === "gpt-image-2" ? "png" : "mp4";
+              const ext = metadata.type === "image" || task.model_id === "gpt-image-2" ? "png" : "mp4";
               const key = `outputs/${task.user_id}/${task.id}.${ext}`;
               console.log("[R2] Uploading to R2:", key);
               finalUrl = await uploadUrlToR2(status.output_url, key);

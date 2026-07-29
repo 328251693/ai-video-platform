@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
+import { useGenerationModels } from "@/hooks/useGenerationModels";
 
 interface Task {
   id: string;
@@ -23,17 +24,14 @@ export default function ImageGenerationPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
-
-  const models = [
-    { id: "gpt-image-2", name: "GPT Image 2", provider: "Grsai", credits: 5 },
-  ];
+  const { models } = useGenerationModels("image");
 
   const fetchRecentTasks = useCallback(async () => {
     try {
       const res = await fetch("/api/generate");
       const data = await res.json();
       if (data.tasks) {
-        setRecentTasks(data.tasks.filter((t: Task) => t.status === "completed" && t.output_url && t.model_id === "gpt-image-2").slice(0, 4));
+        setRecentTasks(data.tasks.filter((t: Task) => t.status === "completed" && t.output_url).slice(0, 4));
       }
     } catch {}
   }, []);
