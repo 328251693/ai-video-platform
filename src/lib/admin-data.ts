@@ -91,6 +91,82 @@ export async function getAdminTasks() {
   return data ?? [];
 }
 
+export async function getAdminTaskStats() {
+  const adminClient = createAdminClient();
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const statuses = ["pending", "processing", "completed", "failed"] as const;
+
+  const [statusCounts, recentTasks] = await Promise.all([
+    Promise.all(
+      statuses.map(async (status) => {
+        const result = await adminClient
+          .from("generation_tasks")
+          .select("id", { count: "exact", head: true })
+          .eq("status", status);
+        return { status, count: result.count ?? 0, error: result.error };
+      }),
+    ),
+    adminClient
+      .from("generation_tasks")
+      .select("status, metadata")
+      .gte("created_at", since),
+  ]);
+
+  const firstError = [...statusCounts.map((item) => item.error), recentTasks.error].find(Boolean);
+  if (firstError) {
+    throw new Error(`Admin task stats query failed: ${firstError.message}`);
+  }
+
+  const counts = Object.fromEntries(statusCounts.map(({ status, count }) => [status, count]));
+  const recentRows = recentTasks.data ?? [];
+  const terminalCount = recentRows.filter((task) => task.status === "completed" || task.status === "failed").length;
+  const recentFailureCount = recentRows.filter((task) => task.status === "failed").length;
+  const providerFailures = new Map<string, number>();
+
+  for (const task of recentRows) {
+    if (task.status !== "failed") continue;
+    const metadata = isRecord(task.metadata) ? task.metadata : {};
+    const provider = typeof metadata.provider === "string" ? metadata.provider : "unknown";
+    providerFailures.set(provider, (providerFailures.get(provider) ?? 0) + 1);
+  }
+
+  return {
+    counts,
+    recentFailureRate: terminalCount === 0 ? 0 : Math.round((recentFailureCount / terminalCount) * 10000) / 100,
+    providerFailures: [...providerFailures.entries()]
+      .map(([provider, count]) => ({ provider, count }))
+      .sort((a, b) => b.count - a.count),
+  };
+}
+
+export async function getAdminTaskRefunds(taskIds: string[]) {
+  if (taskIds.length === 0) return new Map<string, { id: string; amount: number; created_at: string }>();
+
+  const adminClient = createAdminClient();
+  const { data, error } = await adminClient
+    .from("credit_transactions")
+    .select("id, reference_id, amount, created_at")
+    .eq("source", "refund")
+    .in("reference_id", taskIds)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`Admin task refunds query failed: ${error.message}`);
+  }
+
+  const refunds = new Map<string, { id: string; amount: number; created_at: string }>();
+  for (const refund of data ?? []) {
+    if (refund.reference_id && !refunds.has(refund.reference_id)) {
+      refunds.set(refund.reference_id, {
+        id: refund.id,
+        amount: Number(refund.amount ?? 0),
+        created_at: refund.created_at,
+      });
+    }
+  }
+  return refunds;
+}
+
 export async function getAdminModels() {
   const adminClient = createAdminClient();
   const { data, error } = await adminClient
@@ -108,4 +184,8 @@ export async function getAdminModels() {
 
 function sumAmounts(rows: Array<{ amount: number }> | null) {
   return (rows ?? []).reduce((total, row) => total + Number(row.amount || 0), 0);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
