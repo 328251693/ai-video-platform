@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import CheckoutButton from "@/components/CheckoutButton";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -70,16 +71,20 @@ export default function PricingPage() {
                 ))}
               </ul>
 
-              <Link
-                href={plan.href}
-                className={`block w-full py-2.5 rounded-xl text-center text-sm font-medium transition-colors ${
-                  plan.popular
-                    ? "bg-violet-600 text-white hover:bg-violet-500"
-                    : "bg-neutral-800 text-neutral-200 hover:bg-neutral-700"
-                }`}
-              >
-                {plan.cta}
-              </Link>
+              {plan.checkoutCode ? (
+                <CheckoutButton
+                  planId={plan.checkoutCode}
+                  className={`inline-flex w-full items-center justify-center gap-2 py-2.5 rounded-xl text-center text-sm font-medium transition-colors ${
+                    plan.popular ? "bg-violet-600 text-white hover:bg-violet-500" : "bg-neutral-800 text-neutral-200 hover:bg-neutral-700"
+                  }`}
+                >
+                  {plan.cta}
+                </CheckoutButton>
+              ) : (
+                <Link href={plan.href} className={`block w-full py-2.5 rounded-xl text-center text-sm font-medium transition-colors ${plan.popular ? "bg-violet-600 text-white hover:bg-violet-500" : "bg-neutral-800 text-neutral-200 hover:bg-neutral-700"}`}>
+                  {plan.cta}
+                </Link>
+              )}
             </div>
           ))}
         </div>
@@ -156,6 +161,7 @@ const plans = [
     popular: false,
     href: "/login",
     cta: "Subscribe",
+    checkoutCode: "starter",
     features: [
       "Access to all models",
       "1080p video quality",
@@ -173,6 +179,7 @@ const plans = [
     popular: true,
     href: "/login",
     cta: "Subscribe",
+    checkoutCode: "pro",
     features: [
       "Everything in Starter",
       "4K video quality",
