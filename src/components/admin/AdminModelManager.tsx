@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Pencil, Plus, Power, Save, X } from "lucide-react";
+import { Pencil, Plus, Power, RefreshCw, Save, X } from "lucide-react";
 
 type ModelType = "video" | "image";
 
@@ -34,6 +34,14 @@ interface ModelForm {
   capabilities: string;
 }
 
+type HealthStatus = "ready" | "missing_key" | "unsupported";
+
+interface ModelHealth {
+  status: HealthStatus;
+  environment_variable: string | null;
+  checked_at: string;
+}
+
 const emptyForm: ModelForm = {
   id: "",
   name: "",
@@ -51,6 +59,8 @@ export default function AdminModelManager({ initialModels }: { initialModels: Ad
   const [form, setForm] = useState<ModelForm | null>(null);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [checkingId, setCheckingId] = useState<string | null>(null);
+  const [healthById, setHealthById] = useState<Record<string, ModelHealth>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -145,6 +155,21 @@ export default function AdminModelManager({ initialModels }: { initialModels: Ad
     }
   }
 
+  async function checkModel(model: AdminModel) {
+    setCheckingId(model.id);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/models/${encodeURIComponent(model.id)}/health`, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "检查模型配置失败");
+      setHealthById((current) => ({ ...current, [model.id]: data }));
+    } catch (healthError) {
+      setError(healthError instanceof Error ? healthError.message : "检查模型配置失败");
+    } finally {
+      setCheckingId(null);
+    }
+  }
+
   return (
     <div className="admin-page">
       <section className="admin-page-heading">
@@ -186,9 +211,11 @@ export default function AdminModelManager({ initialModels }: { initialModels: Ad
               <span><small>供应商</small><strong>{model.provider}</strong></span>
               <span><small>Credits</small><strong>{model.credits_cost ?? 20}</strong></span>
             </div>
+            {healthById[model.id] && <div className={`admin-model-health admin-model-health--${healthById[model.id].status}`}><strong>{healthLabel(healthById[model.id].status)}</strong><span>{healthById[model.id].environment_variable || "无对应环境变量"}</span></div>}
             <div className="admin-model-card__footer">
               <span className="admin-code">{model.provider_model_id || model.id}</span>
               <div className="admin-model-card__actions">
+                <button type="button" className="admin-icon-action" onClick={() => checkModel(model)} disabled={checkingId === model.id} aria-label={`检查 ${model.name} 配置`} title="检查配置"><RefreshCw size={14} className={checkingId === model.id ? "admin-spin" : ""} /></button>
                 <button type="button" className="admin-icon-action" onClick={() => startEdit(model)} aria-label={`编辑 ${model.name}`} title="编辑"><Pencil size={14} /></button>
                 <button type="button" className={`admin-icon-action${model.is_active ? " admin-icon-action--danger" : " admin-icon-action--success"}`} onClick={() => toggleModel(model)} disabled={busyId === model.id} aria-label={model.is_active ? `停用 ${model.name}` : `启用 ${model.name}`} title={model.is_active ? "停用" : "启用"}><Power size={14} /></button>
               </div>
@@ -232,4 +259,10 @@ export default function AdminModelManager({ initialModels }: { initialModels: Ad
 function isSupportedProvider(provider: string) {
   const normalized = provider.trim().toLowerCase();
   return normalized === "grsai" || normalized === "apimart";
+}
+
+function healthLabel(status: HealthStatus) {
+  if (status === "ready") return "配置就绪";
+  if (status === "missing_key") return "缺少 API Key";
+  return "供应商未适配";
 }

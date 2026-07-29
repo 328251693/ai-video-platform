@@ -3,6 +3,13 @@
 
 export type ProviderName = "grsai" | "apimart";
 
+export interface ProviderConfigurationStatus {
+  provider: string;
+  supported: boolean;
+  configured: boolean;
+  environmentVariable: string | null;
+}
+
 // ==================== 配置 ====================
 
 const GRSAI_BASE_URL = process.env.GRSAI_BASE_URL || "https://grsaiapi.com";
@@ -194,6 +201,22 @@ async function apimartQueryResult(taskId: string): Promise<GenerationResult> {
 
 export function isSupportedProvider(provider: string): provider is ProviderName {
   return provider === "grsai" || provider === "apimart";
+}
+
+export function getProviderConfigurationStatus(provider: string): ProviderConfigurationStatus {
+  const normalized = provider.trim().toLowerCase();
+  const environmentVariable = normalized === "grsai"
+    ? "grsai_key"
+    : normalized === "apimart"
+      ? "apimart_key"
+      : null;
+
+  return {
+    provider: normalized || provider,
+    supported: environmentVariable !== null,
+    configured: environmentVariable ? Boolean(process.env[environmentVariable]) : false,
+    environmentVariable,
+  };
 }
 
 export async function submitGeneration(params: {
