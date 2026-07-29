@@ -8,6 +8,7 @@ import {
   ClipboardList,
   ExternalLink,
   LayoutDashboard,
+  ScrollText,
   ReceiptText,
   ShieldCheck,
   Users,
@@ -15,6 +16,7 @@ import {
 import type { AdminRole } from "@/lib/admin";
 
 const navigation = [
+  { href: "/admin/audit-logs", label: "操作日志", icon: ScrollText },
   { href: "/admin", label: "总览", icon: LayoutDashboard },
   { href: "/admin/users", label: "用户账户", icon: Users },
   { href: "/admin/transactions", label: "Credits 流水", icon: ReceiptText },

@@ -141,7 +141,7 @@ CREATE TABLE public.credit_transactions (
   balance_after INTEGER NOT NULL,
 
   -- Source: purchase, generation, refund, bonus
-  source TEXT NOT NULL CHECK (source IN ('purchase', 'generation', 'refund', 'bonus')),
+  source TEXT NOT NULL CHECK (source IN ('purchase', 'generation', 'refund', 'bonus', 'admin_adjustment')),
   reference_id TEXT,
 
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -263,3 +263,21 @@ CREATE INDEX idx_tasks_status ON public.generation_tasks(status);
 CREATE INDEX idx_tasks_created_at ON public.generation_tasks(created_at DESC);
 CREATE INDEX idx_transactions_user_id ON public.credit_transactions(user_id);
 CREATE INDEX idx_transactions_created_at ON public.credit_transactions(created_at DESC);
+
+-- Administrator audit trail
+CREATE TABLE public.admin_audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  target_type TEXT NOT NULL,
+  target_id TEXT,
+  reason TEXT NOT NULL,
+  idempotency_key TEXT UNIQUE,
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.admin_audit_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE INDEX idx_admin_audit_logs_created_at ON public.admin_audit_logs(created_at DESC);
+CREATE INDEX idx_admin_audit_logs_target ON public.admin_audit_logs(target_type, target_id);
