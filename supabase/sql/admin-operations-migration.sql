@@ -5,6 +5,11 @@ ALTER TABLE public.billing_orders
   ADD CONSTRAINT billing_orders_status_check
   CHECK (status IN ('pending', 'completed', 'failed', 'refund_requested', 'refunded', 'disputed'));
 
+ALTER TABLE public.credit_transactions DROP CONSTRAINT IF EXISTS credit_transactions_source_check;
+ALTER TABLE public.credit_transactions
+  ADD CONSTRAINT credit_transactions_source_check
+  CHECK (source IN ('purchase', 'purchase_reversal', 'generation', 'refund', 'bonus', 'admin_adjustment'));
+
 ALTER TABLE public.generation_tasks
   ADD COLUMN IF NOT EXISTS retry_count INTEGER NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS last_retry_at TIMESTAMPTZ,
@@ -47,6 +52,13 @@ CREATE TABLE IF NOT EXISTS public.admin_audit_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE public.admin_audit_logs
+  ADD COLUMN IF NOT EXISTS before_data JSONB,
+  ADD COLUMN IF NOT EXISTS after_data JSONB,
+  ADD COLUMN IF NOT EXISTS reason TEXT,
+  ADD COLUMN IF NOT EXISTS request_id TEXT,
+  ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
+
 ALTER TABLE public.billing_refunds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_audit_logs ENABLE ROW LEVEL SECURITY;
 
@@ -56,6 +68,9 @@ CREATE INDEX IF NOT EXISTS idx_billing_refunds_status
   ON public.billing_refunds(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_admin_audit_logs_target
   ON public.admin_audit_logs(target_type, target_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_audit_logs_idempotency
+  ON public.admin_audit_logs(idempotency_key)
+  WHERE idempotency_key IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_generation_tasks_retry
   ON public.generation_tasks(status, retry_count, created_at DESC);
 
@@ -154,6 +169,86 @@ BEGIN
     'retry_count', next_retry,
     'credits_remaining', new_balance,
     'retry_reference', retry_reference
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_adjust_credits(
+  p_actor_id UUID,
+  p_user_id UUID,
+  p_amount INTEGER,
+  p_reason TEXT,
+  p_idempotency_key TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  current_balance INTEGER;
+  new_balance INTEGER;
+  audit_id UUID;
+BEGIN
+  IF p_amount = 0 OR p_reason IS NULL OR length(trim(p_reason)) < 3 OR length(trim(p_reason)) > 500 THEN
+    RAISE EXCEPTION 'Invalid credit adjustment';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.admin_roles
+    WHERE user_id = p_actor_id AND role IN ('owner', 'admin')
+  ) THEN
+    RAISE EXCEPTION 'Unauthorized admin credit operation';
+  END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtext('admin-credit:' || COALESCE(p_idempotency_key, p_user_id::TEXT)));
+
+  IF p_idempotency_key IS NOT NULL THEN
+    SELECT id, (after_data->>'balance_after')::INTEGER INTO audit_id, current_balance
+    FROM public.admin_audit_logs
+    WHERE idempotency_key = p_idempotency_key;
+    IF audit_id IS NOT NULL THEN
+      RETURN jsonb_build_object('audit_id', audit_id, 'balance_after', current_balance, 'replayed', true);
+    END IF;
+  END IF;
+
+  SELECT credits_remaining INTO current_balance
+  FROM public.profiles
+  WHERE id = p_user_id
+  FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'User not found';
+  END IF;
+  new_balance := current_balance + p_amount;
+  IF new_balance < 0 THEN
+    RAISE EXCEPTION 'Credit balance cannot become negative';
+  END IF;
+
+  UPDATE public.profiles
+  SET credits_remaining = new_balance, updated_at = NOW()
+  WHERE id = p_user_id;
+
+  audit_id := gen_random_uuid();
+  INSERT INTO public.credit_transactions (user_id, amount, balance_after, source, reference_id)
+  VALUES (p_user_id, p_amount, new_balance, 'admin_adjustment', audit_id::TEXT);
+  INSERT INTO public.admin_audit_logs (
+    id, actor_id, action, target_type, target_id, before_data, after_data, reason, idempotency_key
+  ) VALUES (
+    audit_id,
+    p_actor_id,
+    'credits.adjust',
+    'user',
+    p_user_id::TEXT,
+    jsonb_build_object('balance', current_balance),
+    jsonb_build_object('balance', new_balance, 'balance_after', new_balance, 'amount', p_amount),
+    trim(p_reason),
+    NULLIF(trim(p_idempotency_key), '')
+  );
+
+  RETURN jsonb_build_object(
+    'audit_id', audit_id,
+    'balance_after', new_balance,
+    'amount', p_amount,
+    'replayed', false
   );
 END;
 $$;
@@ -319,5 +414,7 @@ REVOKE EXECUTE ON FUNCTION public.admin_retry_generation_task(UUID, UUID, INTEGE
 REVOKE EXECUTE ON FUNCTION public.admin_refund_generation_credits(UUID, UUID, INTEGER, TEXT) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.admin_complete_billing_refund(UUID, UUID, TEXT, TEXT) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_retry_generation_task(UUID, UUID, INTEGER) TO service_role;
+REVOKE EXECUTE ON FUNCTION public.admin_adjust_credits(UUID, UUID, INTEGER, TEXT, TEXT) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_refund_generation_credits(UUID, UUID, INTEGER, TEXT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.admin_complete_billing_refund(UUID, UUID, TEXT, TEXT) TO service_role;
+GRANT EXECUTE ON FUNCTION public.admin_adjust_credits(UUID, UUID, INTEGER, TEXT, TEXT) TO service_role;

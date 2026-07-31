@@ -20,6 +20,7 @@ const navigation = [
   { href: "/admin/transactions", label: "Credits 流水", icon: ReceiptText },
   { href: "/admin/orders", label: "支付订单", icon: ReceiptText },
   { href: "/admin/payment-events", label: "支付事件", icon: ShieldCheck },
+  { href: "/admin/audit-logs", label: "操作日志", icon: ShieldCheck },
   { href: "/admin/tasks", label: "生成任务", icon: ClipboardList },
   { href: "/admin/models", label: "模型目录", icon: Boxes },
 ];

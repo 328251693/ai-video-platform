@@ -136,6 +136,21 @@ export async function getAdminPaymentEvents() {
   return data ?? [];
 }
 
+export async function getAdminAuditLogs() {
+  const adminClient = createAdminClient();
+  const { data, error } = await adminClient
+    .from("admin_audit_logs")
+    .select("id, actor_id, action, target_type, target_id, before_data, after_data, reason, request_id, created_at")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (error) {
+    throw new Error(`Admin audit logs query failed: ${error.message}`);
+  }
+
+  return data ?? [];
+}
+
 export async function getAdminModels() {
   const adminClient = createAdminClient();
   const { data, error } = await adminClient
