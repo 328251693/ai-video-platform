@@ -23,7 +23,7 @@ export async function GET(
     if (error) throw new Error(error.message);
     if (!model) return NextResponse.json({ error: "Model not found" }, { status: 404 });
 
-    const configuration = getProviderConfigurationStatus(model.provider);
+    const configuration = await getProviderConfigurationStatus(model.provider);
     const status = !configuration.supported
       ? "unsupported"
       : !configuration.configured
@@ -37,6 +37,8 @@ export async function GET(
       active: model.is_active,
       status,
       environment_variable: configuration.environmentVariable,
+      source: configuration.source,
+      base_url: configuration.baseUrl,
       checked_at: new Date().toISOString(),
     });
   } catch (error) {

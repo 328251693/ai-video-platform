@@ -140,8 +140,6 @@ export async function POST(request: NextRequest) {
       const type = model.type === "image" ? "image" : "video";
 
       console.log("[Generate] Calling submitGeneration with:", { prompt, model_id, type, provider });
-      console.log("[Generate] apimart_key exists:", !!process.env.apimart_key);
-
       const providerResult = await submitGeneration({
         prompt,
         model: model_id,
