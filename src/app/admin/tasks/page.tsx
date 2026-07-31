@@ -19,6 +19,16 @@ export default async function AdminTasksPage() {
         <StatCard label="已完成" value={stats.counts.completed} tone="green" />
         <StatCard label="24 小时失败率" value={`${stats.recentFailureRate}%`} tone="red" />
       </div>
+      {stats.providerFailures.length > 0 && (
+        <section className="admin-notice">
+          <div className="admin-notice__marker" />
+          <div>
+            <strong>供应商失败统计</strong>
+            <p>{stats.providerFailures.map((item) => `${item.provider}: ${item.count} 次`).join(" · ")}</p>
+          </div>
+          <span className="admin-notice__tag">LAST 24H</span>
+        </section>
+      )}
       <div className="admin-table-panel">
         <table className="admin-table">
           <thead><tr><th>任务</th><th>模型</th><th>提示词</th><th>状态</th><th>消耗</th><th>退款核验</th><th>创建时间</th></tr></thead>
