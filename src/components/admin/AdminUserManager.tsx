@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Coins, Save, X } from "lucide-react";
 
 interface AdminUser {
@@ -76,7 +77,7 @@ export default function AdminUserManager({ initialUsers }: { initialUsers: Admin
           <tbody>
             {users.map((user) => (
               <tr key={user.id}>
-                <td><div className="admin-user-cell"><span className="admin-avatar admin-avatar--small">{user.email.slice(0, 1).toUpperCase()}</span><span><strong>{user.email}</strong><small>{user.username || "未设置用户名"}</small></span></div></td>
+                <td><div className="admin-user-cell"><span className="admin-avatar admin-avatar--small">{user.email.slice(0, 1).toUpperCase()}</span><span><Link href={`/admin/users/${encodeURIComponent(user.id)}`}><strong>{user.email}</strong></Link><small>{user.username || "未设置用户名"}</small></span></div></td>
                 <td><span className="admin-tag">{user.plan ?? "free"}</span></td>
                 <td><strong className="admin-number">{user.credits_remaining ?? 0}</strong></td>
                 <td>{formatDate(user.created_at)}</td>

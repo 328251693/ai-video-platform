@@ -61,6 +61,27 @@ export async function getAdminUsers() {
   }));
 }
 
+export async function getAdminUserDetail(userId: string) {
+  const adminClient = createAdminClient();
+  const [{ data: profile, error: profileError }, { data: authResult, error: authError }, { data: transactions, error: transactionError }, { data: tasks, error: taskError }] = await Promise.all([
+    adminClient.from("profiles").select("id, username, avatar_url, plan, credits_remaining, created_at, updated_at").eq("id", userId).maybeSingle(),
+    adminClient.auth.admin.getUserById(userId),
+    adminClient.from("credit_transactions").select("id, amount, balance_after, source, reference_id, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(50),
+    adminClient.from("generation_tasks").select("id, model_id, status, credits_used, prompt, error_message, created_at, completed_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(50),
+  ]);
+
+  const firstError = [profileError, authError, transactionError, taskError].find(Boolean);
+  if (firstError) throw new Error(`Admin user detail query failed: ${firstError.message}`);
+  if (!profile) return null;
+
+  return {
+    profile,
+    email: authResult.user?.email ?? "未获取邮箱",
+    transactions: transactions ?? [],
+    tasks: tasks ?? [],
+  };
+}
+
 export async function getAdminTransactions() {
   const adminClient = createAdminClient();
   const { data, error } = await adminClient
