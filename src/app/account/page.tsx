@@ -1,90 +1,143 @@
-"use client";
-
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import BillingPortalButton from "@/components/BillingPortalButton";
 
-export default function AccountPage() {
-  return (
-    <div className="min-h-screen flex">
-      <aside className="w-64 border-r border-neutral-800 bg-neutral-900 p-4">
-        <Link href="/" className="text-xl font-bold block mb-8">AI Video</Link>
-        <nav className="space-y-2">
-          <Link href="/generate" className="block py-2 px-3 rounded-md text-neutral-400 hover:text-neutral-100">Generate</Link>
-          <Link href="/history" className="block py-2 px-3 rounded-md text-neutral-400 hover:text-neutral-100">History</Link>
-          <Link href="/account" className="block py-2 px-3 rounded-md bg-neutral-800 text-neutral-100">Account</Link>
-        </nav>
-      </aside>
-
-      <main className="flex-1 p-8">
-        <h1 className="text-2xl font-semibold mb-6">Account</h1>
-
-        {/* Profile */}
-        <section className="mb-8">
-          <h2 className="text-lg font-medium mb-4">Profile</h2>
-          <div className="card p-6 max-w-md">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center text-2xl">
-                👤
-              </div>
-              <div>
-                <p className="font-medium">Demo User</p>
-                <p className="text-sm text-neutral-400">demo@example.com</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Credits */}
-        <section className="mb-8">
-          <h2 className="text-lg font-medium mb-4">Credits</h2>
-          <div className="card p-6 max-w-md">
-            <p className="text-3xl font-bold">{credits.remaining}</p>
-            <p className="text-sm text-neutral-400">credits remaining</p>
-            <Link href="/pricing" className="btn-primary mt-4 inline-block">
-              Buy More Credits
-            </Link>
-          </div>
-        </section>
-
-        {/* Plan */}
-        <section className="mb-8">
-          <h2 className="text-lg font-medium mb-4">Current Plan</h2>
-          <div className="card p-6 max-w-md">
-            <p className="font-medium">{credits.plan}</p>
-            <p className="text-sm text-neutral-400">{credits.nextbilling}</p>
-          </div>
-        </section>
-
-        {/* Transactions */}
-        <section>
-          <h2 className="text-lg font-medium mb-4">Recent Transactions</h2>
-          <div className="card max-w-md">
-            {transactions.map((t) => (
-              <div key={t.id} className="flex justify-between p-4 border-b border-neutral-800 last:border-0">
-                <div>
-                  <p className="text-sm">{t.description}</p>
-                  <p className="text-xs text-neutral-500">{t.date}</p>
-                </div>
-                <p className={`text-sm ${t.amount > 0 ? "text-green-500" : "text-neutral-400"}`}>
-                  {t.amount > 0 ? `+${t.amount}` : t.amount}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-    </div>
-  );
+function formatDate(value: string | null | undefined) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(value));
 }
 
-const credits = {
-  remaining: 850,
-  plan: "Pro",
-  nextbilling: "Next billing date: May 28, 2026",
-};
+function formatPlan(value: string | null | undefined) {
+  if (!value) return "Free";
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
 
-const transactions = [
-  { id: "1", description: "Pro Plan - Monthly", amount: -3000, date: "2026-04-28" },
-  { id: "2", description: "Video Generation (Sora)", amount: -500, date: "2026-04-27" },
-  { id: "3", description: "Video Generation (Runway)", amount: -400, date: "2026-04-26" },
-  { id: "4", description: "Welcome Bonus", amount: 1000, date: "2026-04-25" },
-];
+export default async function AccountPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
+  const [{ data: profile }, { data: transactions }, { data: orders }, { data: subscriptions }] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+    supabase
+      .from("credit_transactions")
+      .select("id, amount, balance_after, source, reference_id, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("billing_orders")
+      .select("id, plan_key, billing_cycle, credits_amount, amount, currency, status, created_at, paid_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("billing_subscriptions")
+      .select("id, plan_key, billing_cycle, status, current_period_end, cancel_at_period_end")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(5),
+  ]);
+
+  const activeSubscription = subscriptions?.find((subscription) =>
+    ["active", "paid", "trialing"].includes(subscription.status),
+  );
+
+  return (
+    <main className="min-h-screen bg-neutral-950 px-4 py-16 text-neutral-100 sm:px-6">
+      <section className="mx-auto max-w-6xl">
+        <div className="flex flex-col justify-between gap-5 border-b border-neutral-800 pb-8 sm:flex-row sm:items-end">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-300">Account</p>
+            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white">Your creative balance.</h1>
+            <p className="mt-3 text-neutral-400">{user.email}</p>
+          </div>
+          <Link href="/pricing" className="inline-flex min-h-11 items-center justify-center bg-white px-5 text-sm font-medium text-neutral-950 hover:bg-neutral-200">
+            Buy more Credits
+          </Link>
+        </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <section className="border border-neutral-800 bg-neutral-900/50 p-6">
+            <p className="text-sm text-neutral-500">Credits remaining</p>
+            <p className="mt-3 text-4xl font-semibold text-white">{profile?.credits_remaining ?? 0}</p>
+          </section>
+          <section className="border border-neutral-800 bg-neutral-900/50 p-6">
+            <p className="text-sm text-neutral-500">Current plan</p>
+            <p className="mt-3 text-2xl font-semibold text-white">{formatPlan(profile?.plan)}</p>
+            <p className="mt-2 text-sm text-neutral-500">
+              {activeSubscription
+                ? `${activeSubscription.billing_cycle} · renews ${formatDate(activeSubscription.current_period_end)}`
+                : "No active subscription"}
+            </p>
+          </section>
+          <section className="border border-neutral-800 bg-neutral-900/50 p-6">
+            <p className="text-sm text-neutral-500">Payment status</p>
+            <p className="mt-3 text-2xl font-semibold text-white">
+              {activeSubscription?.cancel_at_period_end ? "Cancels at period end" : activeSubscription?.status || "Free"}
+            </p>
+            <p className="mt-2 text-sm text-neutral-500">Creem confirms payments through Webhooks.</p>
+            <div className="mt-5">
+              <BillingPortalButton />
+            </div>
+          </section>
+        </div>
+
+        <div className="mt-10 grid gap-8 lg:grid-cols-2">
+          <section>
+            <div className="mb-4 flex items-end justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Orders</p>
+                <h2 className="mt-2 text-xl font-semibold text-white">Payment history</h2>
+              </div>
+            </div>
+            <div className="overflow-hidden border border-neutral-800 bg-neutral-900/40">
+              {orders?.length ? orders.map((order) => (
+                <div key={order.id} className="flex items-center justify-between gap-4 border-b border-neutral-800 px-5 py-4 last:border-0">
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      {formatPlan(order.plan_key)} · {order.billing_cycle === "one_time" ? "One-time" : order.billing_cycle}
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-500">{formatDate(order.paid_at || order.created_at)} · {order.credits_amount.toLocaleString()} Credits</p>
+                  </div>
+                  <span className={`text-xs ${order.status === "completed" ? "text-emerald-300" : "text-neutral-500"}`}>
+                    {order.status}
+                  </span>
+                </div>
+              )) : <p className="px-5 py-8 text-sm text-neutral-500">No payment records yet.</p>}
+            </div>
+          </section>
+
+          <section>
+            <div className="mb-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Credits ledger</p>
+              <h2 className="mt-2 text-xl font-semibold text-white">Recent activity</h2>
+            </div>
+            <div className="overflow-hidden border border-neutral-800 bg-neutral-900/40">
+              {transactions?.length ? transactions.map((transaction) => (
+                <div key={transaction.id} className="flex items-center justify-between gap-4 border-b border-neutral-800 px-5 py-4 last:border-0">
+                  <div>
+                    <p className="text-sm font-medium text-white">{transaction.source}</p>
+                    <p className="mt-1 text-xs text-neutral-500">{formatDate(transaction.created_at)}</p>
+                  </div>
+                  <span className={transaction.amount >= 0 ? "text-sm text-emerald-300" : "text-sm text-neutral-300"}>
+                    {transaction.amount >= 0 ? "+" : ""}{transaction.amount}
+                  </span>
+                </div>
+              )) : <p className="px-5 py-8 text-sm text-neutral-500">No Credits activity yet.</p>}
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  );
+}

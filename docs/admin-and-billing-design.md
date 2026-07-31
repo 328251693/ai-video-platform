@@ -393,6 +393,8 @@ admin_audit_logs
 
 ## 10. 接口设计
 
+> 实际落地说明：当前支付实现统一使用 `billing_orders`、`billing_subscriptions` 和 `billing_webhook_events`，套餐由服务端环境变量映射，Credits 通过 `grant_purchase_credits` 与 `revoke_purchase_credits` 幂等函数处理。`billing_plans`、`payment_events` 和 `complete_billing_order` 仅保留为早期设计草案，不得执行对应迁移或接入对应 API。
+
 ### 10.1 用户账单接口
 
 | 方法 | 路径 | 说明 |
