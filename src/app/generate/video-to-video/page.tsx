@@ -17,11 +17,10 @@ export default function VideoToVideoPage() {
   const [prompt, setPrompt] = useState("");
   const [selectedModel, setSelectedModel] = useState("MiniMax-Hailuo-2.3");
   const [generating, setGenerating] = useState(false);
-  const [currentTaskStatus, setCurrentTaskStatus] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
-  const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
+  const [uploadedVideo] = useState<string | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
   const { models } = useGenerationModels("video");
 
@@ -35,7 +34,10 @@ export default function VideoToVideoPage() {
     } catch {}
   }, []);
 
-  useEffect(() => { fetchRecentTasks(); }, [fetchRecentTasks]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchRecentTasks(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchRecentTasks]);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
@@ -50,7 +52,6 @@ export default function VideoToVideoPage() {
         const data = await res.json();
         const task = data.task;
         if (!task) return;
-        setCurrentTaskStatus(task.status);
         if (task.status === "completed") {
           stopPolling(); setGenerating(false); setVideoUrl(task.output_url || null); fetchRecentTasks();
         } else if (task.status === "failed") {
@@ -62,7 +63,7 @@ export default function VideoToVideoPage() {
 
   const handleGenerate = async () => {
     if (!uploadedVideo) return;
-    setGenerating(true); setErrorMsg(null); setVideoUrl(null); setCurrentTaskStatus("pending");
+    setGenerating(true); setErrorMsg(null); setVideoUrl(null);
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
@@ -83,11 +84,11 @@ export default function VideoToVideoPage() {
       <div className="flex flex-1 min-h-0">
         <Sidebar activeItem="Video to Video" />
 
-        {/* ========== 中间配置区 ========== */}
+        {/* ========== ????? ========== */}
         <div className="w-[420px] flex-shrink-0 overflow-y-auto p-4 scrollbar-hide">
           <div className="bg-[#1a1a1a] rounded-xl p-5 flex flex-col min-h-full">
 
-            {/* Video to Video 标题 */}
+            {/* Video to Video ?? */}
             <div className="mb-5">
               <div className="flex items-center gap-2 mb-3">
                 <h2 className="text-[15px] font-bold text-white">Video to Video</h2>
@@ -98,7 +99,7 @@ export default function VideoToVideoPage() {
               </div>
             </div>
 
-            {/* Model 选择 */}
+            {/* Model ?? */}
             <div className="mb-5">
               <label className="text-[14px] font-bold text-white mb-3 block">Model</label>
               <div className="flex items-center gap-2">
@@ -158,7 +159,7 @@ export default function VideoToVideoPage() {
               </div>
             </div>
 
-            {/* 底部：积分 + 生成按钮 */}
+            {/* ????? + ???? */}
             <div className="mt-auto pt-3 border-t border-[#333333]">
               <div className="flex items-center gap-1.5 mb-3 text-[13px] text-white">
                 <svg className="w-4 h-4 text-[#A855F7]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -172,7 +173,7 @@ export default function VideoToVideoPage() {
           </div>
         </div>
 
-        {/* ========== 右侧预览区 ========== */}
+        {/* ========== ????? ========== */}
         <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
           <div className="bg-[#1a1a1a] rounded-xl p-5 h-full flex flex-col">
             <h3 className="text-[14px] font-bold text-white mb-4">Preview</h3>

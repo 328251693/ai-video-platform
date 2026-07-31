@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+type WebhookTask = {
+  credits_used: number | null;
+  profiles: {
+    id: string;
+    credits_remaining: number | null;
+  } | null;
+};
+
 // Webhook handler for upstream AI providers
 // POST /api/webhook
 
@@ -34,7 +42,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
-    const taskData = task as any;
+    const taskData = task as WebhookTask;
     const profiles = taskData.profiles;
 
     // Update task based on webhook status
@@ -60,8 +68,8 @@ export async function POST(request: NextRequest) {
         .eq("id", task_id);
 
       // Refund credits on failure
-      if (profiles && profiles.credits_remaining !== undefined) {
-        const refundAmount = task.credits_used || 0;
+      if (profiles && typeof profiles.credits_remaining === "number") {
+        const refundAmount = taskData.credits_used || 0;
         const newBalance = profiles.credits_remaining + refundAmount;
 
         await supabase

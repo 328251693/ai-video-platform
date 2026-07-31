@@ -6,8 +6,8 @@ import Sidebar from "@/components/Sidebar";
 export default function TextToDialoguePage() {
   const [dialogue, setDialogue] = useState("");
   const [selectedVoice, setSelectedVoice] = useState("Rachel");
-  const [generating, setGenerating] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [generating] = useState(false);
+  const [audioUrl] = useState<string | null>(null);
 
   const voices = ["Rachel", "Adam", "Domi", "Elli", "Josh", "Arnold", "Sam", "Clyde", "Dave", "Fin"];
 

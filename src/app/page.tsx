@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import FuturisticBackground from "@/components/FuturisticBackground";
 
@@ -379,7 +380,7 @@ export default function Home() {
                 >
                   {task.output_url && (
                     task.model_id === "gpt-image-2" ? (
-                      <img src={task.output_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <Image src={task.output_url} alt="" width={320} height={180} unoptimized className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     ) : (
                       <video src={task.output_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform" muted />
                     )
@@ -417,15 +418,15 @@ export default function Home() {
 // ==================== Data ====================
 
 const ribbonModels = [
-  { id: "hailuo", name: "Hailuo 2.3", icon: "🌊" },
-  { id: "nano-banana", name: "Nano Banana Pro", icon: "🍌" },
-  { id: "gpt-image", name: "GPT Image 2", icon: "🖼" },
-  { id: "kling", name: "Kling 2.0", icon: "⚡" },
-  { id: "runway", name: "Runway", icon: "🎥" },
-  { id: "midjourney", name: "Midjourney", icon: "🎨" },
-  { id: "gpt4o", name: "GPT 4o", icon: "🤖" },
-  { id: "seedance", name: "Seedance V2.0", icon: "💃" },
-  { id: "veo", name: "Google Veo 3", icon: "🔮" },
+  { id: "hailuo", name: "Hailuo 2.3", icon: "??" },
+  { id: "nano-banana", name: "Nano Banana Pro", icon: "??" },
+  { id: "gpt-image", name: "GPT Image 2", icon: "??" },
+  { id: "kling", name: "Kling 2.0", icon: "?" },
+  { id: "runway", name: "Runway", icon: "??" },
+  { id: "midjourney", name: "Midjourney", icon: "??" },
+  { id: "gpt4o", name: "GPT 4o", icon: "??" },
+  { id: "seedance", name: "Seedance V2.0", icon: "??" },
+  { id: "veo", name: "Google Veo 3", icon: "??" },
 ];
 
 const tabs = [

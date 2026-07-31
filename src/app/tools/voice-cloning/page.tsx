@@ -5,7 +5,7 @@ import Sidebar from "@/components/Sidebar";
 
 export default function VoiceCloningPage() {
   const [voiceName, setVoiceName] = useState("");
-  const [generating, setGenerating] = useState(false);
+  const [generating] = useState(false);
 
   return (
     <div className="h-[calc(100vh-56px)] flex flex-col bg-[#000000] overflow-hidden">

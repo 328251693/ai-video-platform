@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 
 interface Task {
   id: string;
@@ -36,7 +37,8 @@ export default function HistoryPage() {
   }, []);
 
   useEffect(() => {
-    fetchTasks();
+    const timer = window.setTimeout(() => { void fetchTasks(); }, 0);
+    return () => window.clearTimeout(timer);
   }, [fetchTasks]);
 
   // Poll processing tasks
@@ -151,9 +153,12 @@ export default function HistoryPage() {
                 <div className="aspect-video bg-neutral-950/80 relative">
                   {task.output_url ? (
                     task.model_id === "gpt-image-2" ? (
-                      <img
+                      <Image
                         src={task.output_url}
                         alt={task.prompt}
+                        width={640}
+                        height={360}
+                        unoptimized
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -210,7 +215,7 @@ export default function HistoryPage() {
                   </div>
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className="text-xs text-neutral-500">{task.model_id}</span>
-                    <span className="text-neutral-600">·</span>
+                    <span className="text-neutral-600">?</span>
                     <span className="text-xs text-neutral-500">{formatDate(task.created_at)}</span>
                   </div>
                 </div>

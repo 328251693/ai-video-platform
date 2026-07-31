@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 interface SidebarProps {
@@ -48,20 +49,20 @@ export default function Sidebar({ activeItem }: SidebarProps) {
       {/* Logo */}
       {!collapsed && (
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#222222]">
-          <a href="/" className="flex items-center gap-2.5">
+          <Link href="/" className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
             <span className="text-[15px] font-bold text-white">AI Video</span>
-          </a>
+          </Link>
           <button className="px-2.5 py-1 bg-gradient-to-r from-[#3B82F6] to-[#6366F1] text-[10px] text-white font-bold rounded-md">New</button>
         </div>
       )}
       {collapsed && (
         <div className="flex justify-center py-3 border-b border-[#222222]">
-          <a href="/" className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center">
+          <Link href="/" className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center">
             <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-          </a>
+          </Link>
         </div>
       )}
 

@@ -4,8 +4,8 @@ import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 
 export default function SpeechToTextPage() {
-  const [generating, setGenerating] = useState(false);
-  const [transcript, setTranscript] = useState<string | null>(null);
+  const [generating] = useState(false);
+  const [transcript] = useState<string | null>(null);
   const [language, setLanguage] = useState("en");
 
   const languages = [

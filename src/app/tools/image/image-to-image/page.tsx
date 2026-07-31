@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import { useGenerationModels } from "@/hooks/useGenerationModels";
 
@@ -35,7 +36,10 @@ export default function ImageToImagePage() {
     } catch {}
   }, []);
 
-  useEffect(() => { fetchRecentTasks(); }, [fetchRecentTasks]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchRecentTasks(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchRecentTasks]);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
@@ -82,7 +86,7 @@ export default function ImageToImagePage() {
       <div className="flex flex-1 min-h-0">
         <Sidebar activeItem="Image to Image" />
 
-        {/* 中间配置区 */}
+        {/* ????? */}
         <div className="w-[420px] flex-shrink-0 overflow-y-auto p-4 scrollbar-hide">
           <div className="bg-[#1a1a1a] rounded-xl p-5 flex flex-col min-h-full">
 
@@ -193,13 +197,13 @@ export default function ImageToImagePage() {
           </div>
         </div>
 
-        {/* 右侧预览区 */}
+        {/* ????? */}
         <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
           <div className="bg-[#1a1a1a] rounded-xl p-5 h-full flex flex-col">
             <h3 className="text-[14px] font-bold text-white mb-4">Preview</h3>
             <div className="flex-1 flex items-center justify-center">
               {imageUrl ? (
-                <img src={imageUrl} alt="Generated" className="max-w-full max-h-full rounded-lg" />
+                <Image src={imageUrl} alt="Generated" width={1024} height={1024} unoptimized className="max-w-full max-h-full rounded-lg" />
               ) : (
                 <div className="text-center">
                   <svg className="w-16 h-16 text-[#333333] mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -216,7 +220,7 @@ export default function ImageToImagePage() {
                 <div className="grid grid-cols-4 gap-2">
                   {recentTasks.map((t) => (
                     <button key={t.id} onClick={() => setImageUrl(t.output_url)} className="aspect-square bg-[#262626] rounded-lg overflow-hidden hover:ring-2 hover:ring-[#A855F7] transition-all">
-                      <img src={t.output_url!} alt="" className="w-full h-full object-cover" />
+                      <Image src={t.output_url!} alt="" width={256} height={256} unoptimized className="w-full h-full object-cover" />
                     </button>
                   ))}
                 </div>

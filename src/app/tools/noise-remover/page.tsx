@@ -4,8 +4,8 @@ import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 
 export default function NoiseRemoverPage() {
-  const [generating, setGenerating] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [generating] = useState(false);
+  const [audioUrl] = useState<string | null>(null);
 
   return (
     <div className="h-[calc(100vh-56px)] flex flex-col bg-[#000000] overflow-hidden">
