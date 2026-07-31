@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { submitGeneration } from "@/lib/providers";
 import { uploadUrlToR2, isR2Configured } from "@/lib/r2";
-import { getModelCredits } from "@/lib/models";
+import { getModelCreditsFromRecord, normalizeModelProvider } from "@/lib/models";
+import { isSupportedProvider } from "@/lib/providers";
 import { moderatePrompt, ModerationUnavailableError } from "@/lib/moderation";
 
 // POST /api/generate - Create a new generation task
@@ -42,13 +43,21 @@ export async function POST(request: NextRequest) {
     // Get model info
     const { data: model, error: modelError } = await supabase
       .from("models")
-      .select("id, name, provider, type")
+      .select("*")
       .eq("id", model_id)
       .eq("is_active", true)
       .single();
 
     if (modelError || !model) {
       return NextResponse.json({ error: "Model not found" }, { status: 404 });
+    }
+
+    const provider = normalizeModelProvider(model.provider);
+    if (!provider || !isSupportedProvider(provider)) {
+      return NextResponse.json(
+        { error: "This model provider is not configured yet" },
+        { status: 503 },
+      );
     }
 
     // 图片和视频生成必须先通过 Creem 审核，审核失败时禁止继续扣费或调用模型。
@@ -82,7 +91,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const creditsEstimate = getModelCredits(model_id);
+    const creditsEstimate = getModelCreditsFromRecord(model);
 
     if (profile.credits_remaining < creditsEstimate) {
       return NextResponse.json(
@@ -128,7 +137,6 @@ export async function POST(request: NextRequest) {
 
     // Call upstream AI provider
     try {
-      const provider = model.provider;
       const type = model.type === "image" ? "image" : "video";
 
       console.log("[Generate] Calling submitGeneration with:", { prompt, model_id, type, provider });
@@ -137,6 +145,8 @@ export async function POST(request: NextRequest) {
       const providerResult = await submitGeneration({
         prompt,
         model: model_id,
+        provider,
+        provider_model_id: model.provider_model_id,
         duration: input_params.duration,
         aspect_ratio: input_params.aspect_ratio,
         image_url: input_params.image_url,
@@ -149,6 +159,7 @@ export async function POST(request: NextRequest) {
       // Store provider info in metadata for status queries
       const metadata = {
         provider,
+        type,
         provider_task_id: providerResult.provider_task_id,
       };
 
@@ -160,7 +171,7 @@ export async function POST(request: NextRequest) {
         let finalUrl = providerResult.output_url;
         if (isR2Configured()) {
           try {
-            const ext = model_id === "gpt-image-2" ? "png" : "mp4";
+            const ext = type === "image" ? "png" : "mp4";
             const key = `outputs/${profile.id}/${task.id}.${ext}`;
             console.log("[R2] Uploading to R2:", key);
             finalUrl = await uploadUrlToR2(providerResult.output_url, key);
@@ -246,7 +257,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/generate - Get generation tasks
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();

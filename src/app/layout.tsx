@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import "./globals.css";
-import Header from "@/components/Header";
+import AppChrome from "@/components/AppChrome";
 
 export const metadata: Metadata = {
   title: {
@@ -21,21 +20,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="dark h-full antialiased">
       <body className="min-h-full flex flex-col bg-neutral-950 text-neutral-100">
-        <Header />
-        <main className="flex-1 pt-16">
-          {children}
-        </main>
-        <footer className="border-t border-neutral-800/60 bg-neutral-950 px-4 py-6 text-sm text-neutral-500">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
-            <span>Support: support@aividox.com</span>
-            <nav className="flex flex-wrap gap-4" aria-label="Legal links">
-              <Link href="/terms" className="hover:text-neutral-200">Terms of Service</Link>
-              <Link href="/acceptable-use" className="hover:text-neutral-200">Acceptable Use Policy</Link>
-              <Link href="/privacy" className="hover:text-neutral-200">Privacy Policy</Link>
-              <Link href="/contact" className="hover:text-neutral-200">Contact</Link>
-            </nav>
-          </div>
-        </footer>
+        <AppChrome>{children}</AppChrome>
       </body>
     </html>
   );

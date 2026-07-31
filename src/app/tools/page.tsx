@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -34,10 +33,10 @@ export default function ToolsPage() {
 }
 
 const tools = [
-  { name: "Video Upscaler", icon: "🔍", description: "Enhance video resolution up to 4K using AI-powered upscaling technology." },
-  { name: "Background Remover", icon: "✂️", description: "Remove or replace video backgrounds automatically with precision." },
-  { name: "Style Transfer", icon: "🎨", description: "Apply artistic styles to your videos, transforming them into unique visual experiences." },
-  { name: "Motion Interpolation", icon: "⏱️", description: "Increase video frame rate smoothly for buttery-smooth playback." },
-  { name: "Color Grading", icon: "🎭", description: "AI-powered color correction and grading for professional-looking results." },
-  { name: "Audio Sync", icon: "🎵", description: "Synchronize audio with video automatically for perfect lip-sync." },
+  { name: "Video Upscaler", icon: "??", description: "Enhance video resolution up to 4K using AI-powered upscaling technology." },
+  { name: "Background Remover", icon: "??", description: "Remove or replace video backgrounds automatically with precision." },
+  { name: "Style Transfer", icon: "??", description: "Apply artistic styles to your videos, transforming them into unique visual experiences." },
+  { name: "Motion Interpolation", icon: "??", description: "Increase video frame rate smoothly for buttery-smooth playback." },
+  { name: "Color Grading", icon: "??", description: "AI-powered color correction and grading for professional-looking results." },
+  { name: "Audio Sync", icon: "??", description: "Synchronize audio with video automatically for perfect lip-sync." },
 ];

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
+import { useGenerationModels } from "@/hooks/useGenerationModels";
 
 interface Task {
   id: string;
@@ -23,22 +25,22 @@ export default function ImageGenerationPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
-
-  const models = [
-    { id: "gpt-image-2", name: "GPT Image 2", provider: "Grsai", credits: 5 },
-  ];
+  const { models } = useGenerationModels("image");
 
   const fetchRecentTasks = useCallback(async () => {
     try {
       const res = await fetch("/api/generate");
       const data = await res.json();
       if (data.tasks) {
-        setRecentTasks(data.tasks.filter((t: Task) => t.status === "completed" && t.output_url && t.model_id === "gpt-image-2").slice(0, 4));
+        setRecentTasks(data.tasks.filter((t: Task) => t.status === "completed" && t.output_url).slice(0, 4));
       }
     } catch {}
   }, []);
 
-  useEffect(() => { fetchRecentTasks(); }, [fetchRecentTasks]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchRecentTasks(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchRecentTasks]);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
@@ -83,12 +85,12 @@ export default function ImageGenerationPage() {
 
   return (
     <div className="h-[calc(100vh-56px)] flex flex-col bg-[#000000] overflow-hidden">
-      {/* ==================== 主体区域 ==================== */}
+      {/* ==================== ???? ==================== */}
       <div className="flex flex-1 min-h-0">
 
         <Sidebar activeItem="Text to Image" />
 
-        {/* ========== 中间配置区 ========== */}
+        {/* ========== ????? ========== */}
         <div className="w-[420px] flex-shrink-0 overflow-y-auto p-4 scrollbar-hide">
           <div className="bg-[#1a1a1a] rounded-xl p-5 flex flex-col min-h-full">
 
@@ -103,7 +105,7 @@ export default function ImageGenerationPage() {
               </div>
             </div>
 
-            {/* Model 选择 */}
+            {/* Model ?? */}
             <div className="mb-5">
               <label className="text-[14px] font-bold text-white mb-3 block">Model</label>
               <div className="flex items-center gap-2">
@@ -159,7 +161,7 @@ export default function ImageGenerationPage() {
               </div>
             </div>
 
-            {/* 设置项 */}
+            {/* ??? */}
             <div className="mb-5 space-y-5">
               {/* Image Dimensions */}
               <div>
@@ -217,7 +219,7 @@ export default function ImageGenerationPage() {
               </div>
             </div>
 
-            {/* 底部：积分 + 生成按钮 */}
+            {/* ????? + ???? */}
             <div className="mt-auto pt-3 border-t border-[#333333]">
               <div className="flex items-center gap-1.5 mb-3 text-[13px] text-white">
                 <svg className="w-4 h-4 text-[#A855F7]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -237,7 +239,7 @@ export default function ImageGenerationPage() {
           </div>
         </div>
 
-        {/* ========== 右侧预览区 ========== */}
+        {/* ========== ????? ========== */}
         <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
           <div className="bg-[#1a1a1a] rounded-xl p-5 h-full flex flex-col">
             <div className="flex items-center gap-3 mb-4">
@@ -247,7 +249,7 @@ export default function ImageGenerationPage() {
 
             <div className="flex-1 min-h-0 bg-[#000000] rounded-xl overflow-hidden relative flex items-center justify-center">
               {imageUrl ? (
-                <img src={imageUrl} alt="Generated" className="w-full h-full object-contain" />
+                <Image src={imageUrl} alt="Generated" width={1024} height={1024} unoptimized className="w-full h-full object-contain" />
               ) : generating ? (
                 <div className="text-center">
                   <div className="w-14 h-14 border-4 border-[#A855F7]/20 border-t-[#A855F7] rounded-full animate-spin mx-auto mb-4" />
@@ -283,7 +285,7 @@ export default function ImageGenerationPage() {
                 <div className="grid grid-cols-4 gap-2">
                   {recentTasks.map((task) => (
                     <div key={task.id} className="aspect-video rounded-lg overflow-hidden bg-[#121212] border border-[#333333] cursor-pointer hover:border-[#A855F7]/40 transition-colors" onClick={() => { if (task.output_url) { setImageUrl(task.output_url); setCurrentTaskStatus("completed"); setPrompt(task.prompt); } }}>
-                      {task.output_url && <img src={task.output_url} alt="" className="w-full h-full object-cover" />}
+                      {task.output_url && <Image src={task.output_url} alt="" width={256} height={256} unoptimized className="w-full h-full object-cover" />}
                     </div>
                   ))}
                 </div>

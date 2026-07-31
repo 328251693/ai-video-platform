@@ -12,6 +12,35 @@ interface Task {
   created_at: string;
 }
 
+type SliderControlProps = {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+};
+
+function SliderControl({ label, value, onChange, min = 0, max = 1, step = 0.01 }: SliderControlProps) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[13px] text-white font-medium">{label}</span>
+        <span className="text-[12px] text-[#888888]">{value.toFixed(2)}</span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="w-full h-1.5 appearance-none bg-[#333333] rounded-full cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#A855F7] [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(168,85,247,0.5)]"
+      />
+    </div>
+  );
+}
+
 export default function AudioGenerationPage() {
   const [text, setText] = useState("");
   const [selectedEngine, setSelectedEngine] = useState("elevenlabs-multilingual");
@@ -43,7 +72,10 @@ export default function AudioGenerationPage() {
     } catch {}
   }, []);
 
-  useEffect(() => { fetchRecentTasks(); }, [fetchRecentTasks]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchRecentTasks(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchRecentTasks]);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
@@ -89,33 +121,15 @@ export default function AudioGenerationPage() {
 
   const getCredits = () => engines.find(m => m.id === selectedEngine)?.credits || 5;
 
-  const SliderControl = ({ label, value, onChange, min = 0, max = 1, step = 0.01 }: { label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number }) => (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[13px] text-white font-medium">{label}</span>
-        <span className="text-[12px] text-[#888888]">{value.toFixed(2)}</span>
-      </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full h-1.5 appearance-none bg-[#333333] rounded-full cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#A855F7] [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(168,85,247,0.5)]"
-      />
-    </div>
-  );
-
   return (
     <div className="h-[calc(100vh-56px)] flex flex-col bg-[#000000] overflow-hidden">
 
-      {/* ==================== 主体区域 ==================== */}
+      {/* ==================== ???? ==================== */}
       <div className="flex flex-1 min-h-0">
 
         <Sidebar activeItem="Text to Speech" />
 
-        {/* ========== 中间配置区 ========== */}
+        {/* ========== ????? ========== */}
         <div className="w-[420px] flex-shrink-0 overflow-y-auto p-4 scrollbar-hide">
           <div className="bg-[#1a1a1a] rounded-xl p-5 flex flex-col min-h-full">
 
@@ -130,7 +144,7 @@ export default function AudioGenerationPage() {
               </div>
             </div>
 
-            {/* Model 选择 */}
+            {/* Model ?? */}
             <div className="mb-5">
               <label className="text-[14px] font-bold text-white mb-3 block">Model</label>
               <div className="flex items-center gap-2">
@@ -159,7 +173,7 @@ export default function AudioGenerationPage() {
               </div>
             </div>
 
-            {/* Text 输入 */}
+            {/* Text ?? */}
             <div className="flex-1 flex flex-col mb-5">
               <div className="flex items-center justify-between mb-2">
                 <label className="text-[14px] font-bold text-white">Text</label>
@@ -176,7 +190,7 @@ export default function AudioGenerationPage() {
               </div>
             </div>
 
-            {/* Voice 选择 */}
+            {/* Voice ?? */}
             <div className="mb-5">
               <label className="text-[14px] font-bold text-white mb-2 block">Voice</label>
               <div className="relative">
@@ -191,7 +205,7 @@ export default function AudioGenerationPage() {
               </div>
             </div>
 
-            {/* 音频参数滑块 */}
+            {/* ?????? */}
             <div className="mb-5 space-y-4">
               <SliderControl label="Stability" value={stability} onChange={setStability} />
               <SliderControl label="Similarity Boost" value={similarityBoost} onChange={setSimilarityBoost} />
@@ -199,7 +213,7 @@ export default function AudioGenerationPage() {
               <SliderControl label="Speed" value={speed} onChange={setSpeed} min={0.5} max={2.0} step={0.05} />
             </div>
 
-            {/* 底部：积分 + 生成按钮 */}
+            {/* ????? + ???? */}
             <div className="mt-auto pt-3 border-t border-[#333333]">
               <div className="flex items-center gap-1.5 mb-3 text-[13px] text-white">
                 <svg className="w-4 h-4 text-[#A855F7]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -219,7 +233,7 @@ export default function AudioGenerationPage() {
           </div>
         </div>
 
-        {/* ========== 右侧预览区 ========== */}
+        {/* ========== ????? ========== */}
         <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
           <div className="bg-[#1a1a1a] rounded-xl p-5 h-full flex flex-col">
             <div className="flex items-center gap-3 mb-4">

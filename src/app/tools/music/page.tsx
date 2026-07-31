@@ -7,8 +7,8 @@ export default function MusicPage() {
   const [prompt, setPrompt] = useState("");
   const [style, setStyle] = useState("pop");
   const [instrumental, setInstrumental] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [generating] = useState(false);
+  const [audioUrl] = useState<string | null>(null);
 
   const styles = ["Pop", "Rock", "Jazz", "Electronic", "Classical", "Hip Hop", "R&B", "Country", "Lo-fi", "Ambient"];
 

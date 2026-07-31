@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
+import { useGenerationModels } from "@/hooks/useGenerationModels";
 
 interface Task {
   id: string;
@@ -15,7 +17,7 @@ interface Task {
 export default function GeneratePage() {
   const [prompt, setPrompt] = useState("");
   const [selectedModel, setSelectedModel] = useState("MiniMax-Hailuo-2.3");
-  const [channel, setChannel] = useState<"ver1" | "ver2">("ver1");
+  const [channel] = useState<"ver1" | "ver2">("ver1");
   const [referenceType, setReferenceType] = useState("Reference");
   const [aspectRatio, setAspectRatio] = useState("16:9");
   const [resolution, setResolution] = useState("720p");
@@ -27,13 +29,7 @@ export default function GeneratePage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
-
-  const models = [
-    { id: "MiniMax-Hailuo-2.3", name: "Hailuo 2.3", provider: "Apimart", credits: 30 },
-    { id: "MiniMax-Hailuo-2.3-Fast", name: "Hailuo 2.3 Fast", provider: "Apimart", credits: 25 },
-    { id: "nano-banana", name: "Nano Banana", provider: "Grsai", credits: 20 },
-    { id: "gpt-image-2", name: "GPT Image 2", provider: "Grsai", credits: 5 },
-  ];
+  const { models } = useGenerationModels("video");
 
   const fetchRecentTasks = useCallback(async () => {
     try {
@@ -49,7 +45,10 @@ export default function GeneratePage() {
     } catch {}
   }, []);
 
-  useEffect(() => { fetchRecentTasks(); }, [fetchRecentTasks]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void fetchRecentTasks(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchRecentTasks]);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
@@ -94,16 +93,16 @@ export default function GeneratePage() {
 
   return (
     <div className="h-[calc(100vh-56px)] flex flex-col bg-[#000000] overflow-hidden">
-      {/* ==================== 主体区域 ==================== */}
+      {/* ==================== ???? ==================== */}
       <div className="flex flex-1 min-h-0">
 
         <Sidebar activeItem="Text to Video" />
 
-        {/* ========== 中间配置区 ========== */}
+        {/* ========== ????? ========== */}
         <div className="w-[420px] flex-shrink-0 overflow-y-auto p-4 scrollbar-hide">
           <div className="bg-[#1a1a1a] rounded-xl p-5 flex flex-col min-h-full">
 
-            {/* Text to Video + 频道选择 */}
+            {/* Text to Video + ???? */}
             <div className="mb-5">
               <div className="flex items-center gap-2 mb-3">
                 <h2 className="text-[15px] font-bold text-white">Text to Video</h2>
@@ -121,7 +120,7 @@ export default function GeneratePage() {
               )}
             </div>
 
-            {/* Model 选择 */}
+            {/* Model ?? */}
             <div className="mb-5">
               <label className="text-[14px] font-bold text-white mb-3 block">Model</label>
               <div className="flex items-center gap-2">
@@ -218,7 +217,7 @@ First & Last Frame Mode: Upload two images, and AI will generate a video transit
               </div>
             </div>
 
-            {/* 设置项 */}
+            {/* ??? */}
             <div className="mb-5 space-y-5">
               {/* Video Ratio */}
               <div>
@@ -315,7 +314,7 @@ First & Last Frame Mode: Upload two images, and AI will generate a video transit
               </div>
             </div>
 
-            {/* 底部：积分 + 生成按钮 */}
+            {/* ????? + ???? */}
             <div className="mt-auto pt-3 border-t border-[#333333]">
               <div className="flex items-center gap-1.5 mb-3 text-[13px] text-white">
                 <svg className="w-4 h-4 text-[#A855F7]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -337,7 +336,7 @@ First & Last Frame Mode: Upload two images, and AI will generate a video transit
           </div>
         </div>
 
-        {/* ========== 右侧预览区 ========== */}
+        {/* ========== ????? ========== */}
         <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
           <div className="bg-[#1a1a1a] rounded-xl p-5 h-full flex flex-col">
             {/* Video Preview */}
@@ -346,7 +345,7 @@ First & Last Frame Mode: Upload two images, and AI will generate a video transit
               <div className="flex-1 h-px bg-[#333333]" />
             </div>
 
-            {/* 视频播放器 */}
+            {/* ????? */}
             <div className="flex-1 min-h-0 bg-[#000000] rounded-xl overflow-hidden relative">
               {videoUrl ? (
                 <video controls autoPlay loop className="w-full h-full object-contain" src={videoUrl} />
@@ -370,7 +369,7 @@ First & Last Frame Mode: Upload two images, and AI will generate a video transit
                   <source src="https://pub-0ba57c4478ad4daeab520cf5dbf4a0e3.r2.dev/system/simple.webm" type="video/webm" />
                 </video>
               )}
-              {/* 底部品牌标签 */}
+              {/* ?????? */}
               {videoUrl && (
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                   <div className="flex items-center justify-between">
@@ -386,7 +385,7 @@ First & Last Frame Mode: Upload two images, and AI will generate a video transit
               )}
             </div>
 
-            {/* 操作按钮（生成完成后显示） */}
+            {/* ????????????? */}
             {videoUrl && (
               <div className="flex gap-2 mt-3">
                 <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="flex-1 py-2 bg-[#A855F7] text-white text-[12px] font-medium rounded-lg hover:bg-[#9333EA] transition-colors text-center">
@@ -398,7 +397,7 @@ First & Last Frame Mode: Upload two images, and AI will generate a video transit
               </div>
             )}
 
-            {/* 最近创作 */}
+            {/* ???? */}
             {recentTasks.length > 0 && (
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-2">
@@ -412,7 +411,7 @@ First & Last Frame Mode: Upload two images, and AI will generate a video transit
                       className="aspect-video rounded-lg overflow-hidden bg-[#121212] border border-[#333333] cursor-pointer hover:border-[#A855F7]/40 transition-colors"
                       onClick={() => { if (task.output_url) { setVideoUrl(task.output_url); setCurrentTaskStatus("completed"); setPrompt(task.prompt); } }}
                     >
-                      {task.output_url && (task.model_id === "gpt-image-2" ? <img src={task.output_url} alt="" className="w-full h-full object-cover" /> : <video src={task.output_url} className="w-full h-full object-cover" muted />)}
+                      {task.output_url && (task.model_id === "gpt-image-2" ? <Image src={task.output_url} alt="" width={320} height={180} unoptimized className="w-full h-full object-cover" /> : <video src={task.output_url} className="w-full h-full object-cover" muted />)}
                     </div>
                   ))}
                 </div>

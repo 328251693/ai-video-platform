@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getModelCreditsFromRecord } from "@/lib/models";
 
 // GET /api/models/[id] - Get specific model details
 export async function GET(
@@ -21,7 +22,7 @@ export async function GET(
       return NextResponse.json({ error: "Model not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ model });
+    return NextResponse.json({ model: { ...model, credits: getModelCreditsFromRecord(model) } });
   } catch (error) {
     console.error("Model API error:", error);
     return NextResponse.json(

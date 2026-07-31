@@ -1,11 +1,9 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
 
@@ -22,7 +20,7 @@ export default function LoginPage() {
       if (error) throw error;
     } catch (error) {
       console.error("Login error:", error);
-      alert("登录失败，请重试");
+      alert("????????");
     } finally {
       setLoading(false);
     }

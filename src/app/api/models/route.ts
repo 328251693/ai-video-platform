@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getModelCredits } from "@/lib/models";
+import { getModelCreditsFromRecord, normalizeModelProvider } from "@/lib/models";
 
 // GET /api/models - List all available models
 export async function GET(request: Request) {
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from("models")
-      .select("id, name, provider, type, description, is_active")
+      .select("*")
       .eq("is_active", true)
       .order("name");
 
@@ -29,10 +29,10 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({
-      models: (models || []).map((model) => ({
-        ...model,
-        credits: getModelCredits(model.id),
-      })),
+      models: (models || [])
+        .filter((model) => normalizeModelProvider(model.provider) !== null)
+        .map((model) => ({ ...model, credits: getModelCreditsFromRecord(model) }))
+        .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0) || a.name.localeCompare(b.name)),
     });
   } catch (error) {
     console.error("Models API error:", error);

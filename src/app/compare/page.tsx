@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -77,10 +76,10 @@ export default function ComparePage() {
 }
 
 const compareModels = [
-  { name: "Kling 2.0", provider: "Kuaishou", icon: "⚡", resolution: "1920x1080", maxDuration: "10s", status: "online" },
-  { name: "MiniMax", provider: "MiniMax", icon: "🎯", resolution: "1280x720", maxDuration: "6s", status: "online" },
-  { name: "Hailuo 02", provider: "MiniMax", icon: "🌊", resolution: "1280x720", maxDuration: "6s", status: "online" },
-  { name: "Google Veo 3", provider: "Google", icon: "🔮", resolution: "1920x1080", maxDuration: "8s", status: "online" },
-  { name: "Wan 2.1", provider: "Alibaba", icon: "🌐", resolution: "1920x1080", maxDuration: "5s", status: "online" },
-  { name: "Runway", provider: "Runway", icon: "🎥", resolution: "1920x1080", maxDuration: "10s", status: "online" },
+  { name: "Kling 2.0", provider: "Kuaishou", icon: "?", resolution: "1920x1080", maxDuration: "10s", status: "online" },
+  { name: "MiniMax", provider: "MiniMax", icon: "??", resolution: "1280x720", maxDuration: "6s", status: "online" },
+  { name: "Hailuo 02", provider: "MiniMax", icon: "??", resolution: "1280x720", maxDuration: "6s", status: "online" },
+  { name: "Google Veo 3", provider: "Google", icon: "??", resolution: "1920x1080", maxDuration: "8s", status: "online" },
+  { name: "Wan 2.1", provider: "Alibaba", icon: "??", resolution: "1920x1080", maxDuration: "5s", status: "online" },
+  { name: "Runway", provider: "Runway", icon: "??", resolution: "1920x1080", maxDuration: "10s", status: "online" },
 ];

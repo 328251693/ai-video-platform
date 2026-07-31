@@ -1,12 +1,18 @@
 export type GenerationModelType = "video" | "image";
+export type ModelProvider = "grsai" | "apimart";
 
 export interface GenerationModel {
   id: string;
   name: string;
   provider: string;
+  provider_model_id?: string | null;
   type: GenerationModelType;
   description: string;
   credits: number;
+  credits_cost?: number;
+  sort_order?: number;
+  parameters?: Record<string, unknown>;
+  capabilities?: unknown[];
   active?: boolean;
 }
 
@@ -47,4 +53,15 @@ export const FALLBACK_MODELS: GenerationModel[] = [
 
 export function getModelCredits(modelId: string): number {
   return FALLBACK_MODELS.find((model) => model.id === modelId)?.credits ?? 20;
+}
+
+export function getModelCreditsFromRecord(model: { id: string; credits_cost?: number | null }): number {
+  return typeof model.credits_cost === "number" && model.credits_cost >= 0
+    ? model.credits_cost
+    : getModelCredits(model.id);
+}
+
+export function normalizeModelProvider(provider: string): ModelProvider | null {
+  const normalized = provider.trim().toLowerCase();
+  return normalized === "grsai" || normalized === "apimart" ? normalized : null;
 }
