@@ -1,5 +1,8 @@
 -- 支付核心：套餐、订单、Creem 回调事件和幂等发放 Credits
 
+-- 注意：如果数据库已经执行过旧版 billing-migration.sql，请先完成
+-- docs/payment-schema-reconciliation.md 中的 schema 统一，不能直接执行本迁移。
+
 CREATE TABLE IF NOT EXISTS public.billing_plans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code TEXT NOT NULL UNIQUE,
