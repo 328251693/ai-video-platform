@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getBillingPlan } from "@/lib/billing";
 import {
@@ -58,8 +59,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const admin = createAdminClient();
     const requestId = `aividox_${user.id}_${crypto.randomUUID()}`;
-    const { data: pendingOrder, error: orderError } = await supabase
+    const { data: pendingOrder, error: orderError } = await admin
       .from("billing_orders")
       .insert({
         user_id: user.id,
@@ -76,7 +78,7 @@ export async function POST(request: NextRequest) {
     if (orderError || !pendingOrder) {
       console.error("Billing order creation error:", orderError);
       return NextResponse.json(
-        { error: "Billing database migration is required" },
+        { error: "Unable to create billing order" },
         { status: 503 },
       );
     }
@@ -101,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     if (!checkout.checkoutUrl) throw new Error("Creem did not return a checkout URL");
 
-    await supabase
+    await admin
       .from("billing_orders")
       .update({
         checkout_id: checkout.id,
@@ -113,8 +115,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (orderId) {
       try {
-        const supabase = await createClient();
-        await supabase
+        const admin = createAdminClient();
+        await admin
           .from("billing_orders")
           .update({ status: "failed", updated_at: new Date().toISOString() })
           .eq("id", orderId);
