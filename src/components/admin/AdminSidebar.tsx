@@ -9,6 +9,7 @@ import {
   ExternalLink,
   LayoutDashboard,
   ReceiptText,
+  ShoppingCart,
   ShieldCheck,
   Users,
 } from "lucide-react";
@@ -18,6 +19,7 @@ const navigation = [
   { href: "/admin", label: "总览", icon: LayoutDashboard },
   { href: "/admin/users", label: "用户账户", icon: Users },
   { href: "/admin/transactions", label: "Credits 流水", icon: ReceiptText },
+  { href: "/admin/orders", label: "支付订单", icon: ShoppingCart },
   { href: "/admin/tasks", label: "生成任务", icon: ClipboardList },
   { href: "/admin/models", label: "模型目录", icon: Boxes },
 ];

@@ -76,6 +76,21 @@ export async function getAdminTransactions() {
   return data ?? [];
 }
 
+export async function getAdminBillingOrders() {
+  const adminClient = createAdminClient();
+  const { data, error } = await adminClient
+    .from("billing_orders")
+    .select("id, user_id, plan_id, status, amount_cents, currency, credits, provider_checkout_id, provider_order_id, created_at, paid_at")
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error) {
+    throw new Error(`Admin billing orders query failed: ${error.message}`);
+  }
+
+  return data ?? [];
+}
+
 export async function getAdminTasks() {
   const adminClient = createAdminClient();
   const { data, error } = await adminClient
