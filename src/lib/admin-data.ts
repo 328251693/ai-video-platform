@@ -80,12 +80,57 @@ export async function getAdminTasks() {
   const adminClient = createAdminClient();
   const { data, error } = await adminClient
     .from("generation_tasks")
-    .select("id, user_id, model_id, status, credits_used, prompt, error_message, created_at, completed_at")
+    .select("id, user_id, model_id, status, credits_used, prompt, error_message, created_at, completed_at, retry_count, last_retry_at, credits_refunded_at")
     .order("created_at", { ascending: false })
     .limit(100);
 
   if (error) {
     throw new Error(`Admin tasks query failed: ${error.message}`);
+  }
+
+  return data ?? [];
+}
+
+export async function getAdminOrders() {
+  const adminClient = createAdminClient();
+  const { data, error } = await adminClient
+    .from("billing_orders")
+    .select("id, user_id, request_id, checkout_id, creem_order_id, creem_product_id, plan_key, billing_cycle, credits_amount, amount, currency, status, created_at, updated_at, paid_at")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (error) {
+    throw new Error(`Admin orders query failed: ${error.message}`);
+  }
+
+  return data ?? [];
+}
+
+export async function getAdminBillingRefunds() {
+  const adminClient = createAdminClient();
+  const { data, error } = await adminClient
+    .from("billing_refunds")
+    .select("id, order_id, user_id, amount, currency, credits_to_revoke, status, reason, provider_refund_id, external_reference, requested_by, approved_by, created_at, updated_at, completed_at")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (error) {
+    throw new Error(`Admin refunds query failed: ${error.message}`);
+  }
+
+  return data ?? [];
+}
+
+export async function getAdminPaymentEvents() {
+  const adminClient = createAdminClient();
+  const { data, error } = await adminClient
+    .from("billing_webhook_events")
+    .select("event_id, event_type, status, error_message, received_at, processed_at")
+    .order("received_at", { ascending: false })
+    .limit(200);
+
+  if (error) {
+    throw new Error(`Admin payment events query failed: ${error.message}`);
   }
 
   return data ?? [];

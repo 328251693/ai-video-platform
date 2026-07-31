@@ -41,6 +41,8 @@ export default async function AdminOverviewPage() {
           { href: "/admin/transactions", label: "Credits 流水", description: "核对消耗、退款和赠送记录", icon: ReceiptText },
           { href: "/admin/tasks", label: "生成任务", description: "定位失败任务和供应商状态", icon: ClipboardList },
           { href: "/admin/models", label: "模型目录", description: "查看当前启用模型与供应商", icon: Boxes },
+          { href: "/admin/orders", label: "支付订单", description: "查看订单和退款状态", icon: ReceiptText },
+          { href: "/admin/payment-events", label: "支付事件", description: "重试失败的 Creem Webhook", icon: ReceiptText },
         ].map((item) => {
           const Icon = item.icon;
           return (
@@ -59,7 +61,7 @@ export default async function AdminOverviewPage() {
           <strong>支付系统尚未接入</strong>
           <p>当前价格页仍是展示页面。Creem Checkout、支付 Webhook、订单和退款会在阶段 2、3 开发。</p>
         </div>
-        <span className="admin-notice__tag">PLANNED</span>
+        <span className="admin-notice__tag">ACTIVE</span>
       </section>
     </div>
   );

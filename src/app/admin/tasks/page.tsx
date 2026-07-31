@@ -1,4 +1,5 @@
 import { getAdminTasks } from "@/lib/admin-data";
+import AdminTaskRetryButton from "@/components/admin/AdminTaskRetryButton";
 
 export default async function AdminTasksPage() {
   const tasks = await getAdminTasks();
@@ -11,7 +12,7 @@ export default async function AdminTasksPage() {
       </section>
       <div className="admin-table-panel">
         <table className="admin-table">
-          <thead><tr><th>任务</th><th>模型</th><th>提示词</th><th>状态</th><th>消耗</th><th>创建时间</th></tr></thead>
+          <thead><tr><th>任务</th><th>模型</th><th>提示词</th><th>状态</th><th>消耗</th><th>重试</th><th>创建时间</th></tr></thead>
           <tbody>
             {tasks.map((task) => (
               <tr key={task.id}>
@@ -20,6 +21,7 @@ export default async function AdminTasksPage() {
                 <td className="admin-prompt" title={task.prompt}>{task.prompt}</td>
                 <td><span className={`admin-status admin-status--${task.status}`}>{task.status}</span>{task.error_message && <small className="admin-table__sub admin-error-text">{task.error_message}</small>}</td>
                 <td><strong className="admin-number">{task.credits_used}</strong></td>
+                <td>{task.status === "failed" ? <AdminTaskRetryButton taskId={task.id} retryCount={task.retry_count ?? 0} /> : <span className="admin-table__sub">—</span>}</td>
                 <td>{formatDate(task.created_at)}</td>
               </tr>
             ))}

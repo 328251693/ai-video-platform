@@ -53,11 +53,13 @@ type AdminApiResult =
   | { context: AdminContext; response: null }
   | { context: null; response: NextResponse };
 
-export async function requireAdminApi(): Promise<AdminApiResult> {
+export async function requireAdminApi(
+  allowedRoles: readonly AdminRole[] = ["owner", "admin", "support"],
+): Promise<AdminApiResult> {
   try {
     const context = await getAdminContext();
 
-    if (!context) {
+    if (!context || !allowedRoles.includes(context.role)) {
       return {
         context: null,
         response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
